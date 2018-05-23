@@ -1,14 +1,13 @@
 package java8.dispatcher;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 public class Worker implements Dispatch, Runnable
 {
 
-    private List<Long> list = new ArrayList<>();
+    private Queue<Long> queue = new ArrayDeque<>();
     private boolean done = false;
 
     private final PrintWriter writer;
@@ -28,7 +27,7 @@ public class Worker implements Dispatch, Runnable
 
     @Override public void accept( List<Long> batch )
     {
-        list.addAll( batch );
+        queue.addAll( batch );
     }
 
     @Override public void stop()
@@ -39,14 +38,17 @@ public class Worker implements Dispatch, Runnable
 
     @Override public void run()
     {
-        while ( !done )
+        while ( !( done && queue.isEmpty() ) )
         {
-            if ( list.size() == 0 )
+            if ( queue.size() == 0 )
             {
                 sleep();
+                continue;
             }
 
-            list.stream().map( i -> i += offset ).forEach( writer::println );
+            long item = queue.poll() + offset;
+
+            writer.println( item );
 
         }
 
